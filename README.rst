@@ -1,6 +1,3 @@
-[![Build Status](https://travis-ci.org/ababic/waddleadmin.svg?branch=master)](https://travis-ci.org/rkhleics/wagtailmenus)
-[![Coverage Status](https://coveralls.io/repos/github/ababic/waddleadmin/badge.svg?branch=master)](https://coveralls.io/github/ababic/waddleadmin?branch=master)
-
 .. image:: https://travis-ci.org/ababic/waddleadmin.svg?branch=master
     :alt: Build status
     :target: https://travis-ci.org/ababic/waddleadmin

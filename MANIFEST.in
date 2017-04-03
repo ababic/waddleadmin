@@ -1,0 +1,13 @@
+include LICENSE.txt
+include README.md
+include CHANGELOG.md
+include runtests.py
+recursive-include waddleadmin *.html
+recursive-include waddleadmin *.py
+recursive-include waddleadmin *.json
+recursive-include waddleadmin/static *.js
+recursive-include waddleadmin/static *.css
+recursive-include waddleadmin/static *.scss
+recursive-include waddleadmin/locale *.po
+recursive-include waddleadmin/locale *.mo
+prune waddleadmin/development

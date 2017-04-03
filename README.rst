@@ -12,7 +12,7 @@ What is waddleadmin?
 
 It's a playground for me to try out development ideas for Wagtail's ``contrib.modeladmin`` app.
 
-It's won't ever work reliable, and doesn't have any tests, but it's designed to be compatible with Wagtail 1.9+, and Python 2.7, 3.3, 3.4 and 3.5.
+It probably won't ever work reliably, and doesn't have any tests, but it's designed to be compatible with Wagtail 1.9+, and Python 2.7, 3.3, 3.4 and 3.5.
 
 Installing waddleadmin
 ----------------------
@@ -25,7 +25,7 @@ Installing waddleadmin
 Using waddleadmin
 -----------------
 
-Simply follow the Wagtail docs for ``defining and registering a your model with modeladmin <http://docs.wagtail.io/en/latest/reference/contrib/modeladmin/index.html#how-to-use>``, but instead of doing ``from wagtail.contrib.modeladmin.options import ModelAdmin``, do ``from waddleadmin.options import ModelAdmin``
+Simply follow the Wagtail docs for defining and registering a your model with modeladmin (http://docs.wagtail.io/en/latest/reference/contrib/modeladmin/index.html#how-to-use), but instead of doing ``from wagtail.contrib.modeladmin.options import ModelAdmin``, do ``from waddleadmin.options import ModelAdmin``
 
 
 Developing locally
@@ -46,7 +46,5 @@ If you'd like a runnable Django project to help with development of waddleadmin,
 6. Now run the project using the standard Django command:  
    ``python manage.py runserver``
 
-Your local copies of ``settings/development.py`` and ``manage.py`` should be
-ignored by git when you push any changes, as will anything you add to the
-``waddleadmin/development/`` directory.
+Your local copies of ``settings/development.py`` and ``manage.py`` should beignored by git when you push any changes, as will anything you add to the ``waddleadmin/development/`` directory.
 

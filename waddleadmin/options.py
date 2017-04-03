@@ -1,9 +1,12 @@
 from __future__ import unicode_literals
 
 from django.utils.encoding import force_text
+from django.utils.translation import ugettext_lazy as _
 from wagtail.contrib.modeladmin.options import ModelAdmin as WagtailModelAdmin
 
-from .actions import ModelAdminAction, DEFAULT_ACTIONS, DEFAULT_PAGE_ACTIONS
+from .actions import ( # noqa
+    ModelAdminAction, DEFAULT_MODEL_ACTIONS, DEFAULT_PAGE_MODEL_ACTIONS
+)
 from .helpers import GenericButtonHelper
 
 
@@ -33,8 +36,8 @@ class ModelAdmin(WagtailModelAdmin):
             return self.model_actions
         extra = list(self.extra_model_actions)
         if self.is_pagemodel:
-            return DEFAULT_PAGE_ACTIONS + extra
-        return DEFAULT_ACTIONS + extra
+            return DEFAULT_PAGE_MODEL_ACTIONS + extra
+        return DEFAULT_MODEL_ACTIONS + extra
 
     def get_action(self, codename):
         self._actions.get(codename)
@@ -44,7 +47,7 @@ class ModelAdmin(WagtailModelAdmin):
 
     def get_admin_urls_for_registration(self):
         for action in self.get_actions_for_url_registration():
-        
+            pass
 
     def get_button_helper_class(self):
         """
@@ -89,40 +92,34 @@ class ModelAdmin(WagtailModelAdmin):
 
     def get_button_url_for_action(self, codename, obj):
         """
-        Return a URL to be used as the `href` attribut for buttons with action
+        Return a URL to be used as the `href` attribute for buttons with action
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
-        # If a value is defined as a class attribute, return that
-        action_specific_url_attr = '%s_button_url' % codename
-        if hasattr(self, action_specific_url_attr):
-            return getattr(self, action_specific_url_attr)
-        return self.url_helper.get_action_url_for_obj(codename, obj)
+        url = self.get_action(codename).get_button_url_for_obj(obj)
+        return url or self.url_helper.get_action_url_for_obj(codename, obj)
 
     def get_button_label_for_action(self, codename, obj):
         """
         Return a string to be used as the `label` text for buttons with action
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
-        # If a value is defined as a class attribute, return that
-        action_specific_label_attr = '%s_button_label' % codename
-        if hasattr(self, action_specific_label_attr):
-            return getattr(self, action_specific_label_attr)
-        # Action-specific overrides
+        action = self.get_action(codename)
+        label = action.get_button_label_for_obj(obj)
+        if label:
+            return label
         if codename == 'create':
             return _('Add %s') % self.model_verbose_name
-        # Default
-        return codename.replace('_', ' ').capitalize()
+        return action.verbose_name.capitalize()
 
     def get_button_title_for_action(self, codename, obj):
         """
         Return a string to be used as the `title` text for buttons with action
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
-        # If a value is defined as a class attribute, return that
-        action_specific_title_attr = '%s_button_title' % codename
-        if hasattr(self, action_specific_title_attr):
-            return getattr(self, action_specific_title_attr)
-        # Action-specific overrides
+        action = self.get_action(codename)
+        title = action.get_button_title_for_obj(obj)
+        if title:
+            return title
         if codename == 'create':
             return _('Create a new %s') % self.model_verbose_name
         if codename == 'dropdown':
@@ -135,22 +132,19 @@ class ModelAdmin(WagtailModelAdmin):
             return _("View revision history for '%s'") % obj
         if codename == 'add_subpage':
             return _("Add child page to '%s'") % obj
-        # Default
-        return _("%(action)s %(model_name)s '%(object_str)s'") % {
-            'action': codename.replace('_', ' ').capitalize(),
+        return _("%(action)s %(model_name)s '%(obj_representation)s'") % {
+            'action': action.verbose_name.capitalize(),
             'model_name': self.model_verbose_name,
-            'object_str': obj,
+            'obj_representation': obj,
         }
 
-    def get_button_css_classes_for_action(self, codename, obj):
+    def get_button_classes_for_action(self, codename, obj):
         """
-        Returns a list of css classes to be added to buttons with action
+        Returns a set of css classes to be added to buttons with action
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
-        classes = list(self.default_button_css_classes)
-        action_specific_list_attr = '%s_button_css_classes' % codename
-        if hasattr(self, action_specific_list_attr):
-            classes.extend(getattr(self, action_specific_list_attr, []))
+        classes = set(self.default_button_css_classes)
+        classes.extend(
+            self.get_action(codename).get_button_extra_classes_for_obj()
+        )
         return classes
-
-

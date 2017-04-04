@@ -216,42 +216,50 @@ CHOOSE_PARENT_ACTION = ('choose_parent', {
 
 ADD_SUBPAGE_ACTION = ('add_subpage', {
     'verbose_name': _('add sub-page'),
+    'view_url_registration_required': False,
     'view_permissions_required': ['edit'],
 })
 
 COPY_ACTION = ('copy', {
     'verbose_name': _('copy'),
     'view_permissions_required': ['copy'],
+    'view_url_registration_required': False,
 })
 
 MOVE_ACTION = ('move', {
     'verbose_name': _('move'),
     'view_permissions_required': ['edit'],
+    'view_url_registration_required': False,
 })
 
 PREVIEW_ACTION = ('preview', {
     'verbose_name': _('preview'),
     'view_permissions_required': ['edit'],
+    'view_url_registration_required': False,
 })
 
 VIEW_DRAFT_ACTION = ('view_draft', {
     'verbose_name': _('view draft'),
     'view_permissions_required': ['edit'],
+    'view_url_registration_required': False,
 })
 
 PUBLISH_ACTION = ('publish', {
     'verbose_name': _('publish'),
     'view_permissions_required': ['publish'],
+    'view_url_registration_required': False,
 })
 
 UNPUBLISH_ACTION = ('unpublish', {
     'verbose_name': _('unpublish'),
     'view_permissions_required': ['unpublish'],
+    'view_url_registration_required': False,
 })
 
 VIEW_REVISIONS_ACTION = ('revisions_index', {
     'verbose_name': _('view revisions'),
     'view_permissions_required': ['edit'],
+    'view_url_registration_required': False,
 })
 
 DEFAULT_PAGE_MODEL_ACTIONS = [INDEX_ACTION, CREATE_ACTION, INSPECT_ACTION,

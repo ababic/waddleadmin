@@ -7,7 +7,9 @@ from wagtail.contrib.modeladmin.options import ModelAdmin as WagtailModelAdmin
 from .actions import ( # noqa
     ModelAdminAction, DEFAULT_MODEL_ACTIONS, DEFAULT_PAGE_MODEL_ACTIONS
 )
-from .helpers import GenericButtonHelper
+from .helpers.permission import PermissionHelper, PagePermissionHelper
+from .helpers.url import AdminURLHelper, PageAdminURLHelper
+from .helpers.button import GenericButtonHelper
 
 
 class ModelAdmin(WagtailModelAdmin):
@@ -31,6 +33,31 @@ class ModelAdmin(WagtailModelAdmin):
             kwargs.update({'model_admin': self, 'codename': codename})
             self._actions[codename] = ModelAdminAction(**kwargs)
 
+    def get_permission_helper_class(self):
+        # No changes here, really! This is just to load our new versions of
+        # the two helper classes
+        if self.permission_helper_class:
+            return self.permission_helper_class
+        if self.is_pagemodel:
+            return PagePermissionHelper
+        return PermissionHelper
+
+    def get_url_helper_class(self):
+        # No changes here, really! This is just to load our new versions of
+        # the two helper classes
+        if self.url_helper_class:
+            return self.url_helper_class
+        if self.is_pagemodel:
+            return PageAdminURLHelper
+        return AdminURLHelper
+
+    def get_button_helper_class(self):
+        # Replaces the current two ButtonHelper classes with the new
+        # GenericButtonHelper one
+        if self.button_helper_class:
+            return self.button_helper_class
+        return GenericButtonHelper
+
     def get_action_definitions(self):
         if self.model_actions:
             return self.model_actions
@@ -49,15 +76,7 @@ class ModelAdmin(WagtailModelAdmin):
         for action in self.get_actions_for_url_registration():
             pass
 
-    def get_button_helper_class(self):
-        """
-        Returns a ButtonHelper class to help generate buttons for the given
-        model.
-        """
-        if self.button_helper_class:
-            return self.button_helper_class
-        # Just the new class instead of the old helper classes
-        return GenericButtonHelper
+    
 
     def get_index_view_button_names(self, request):
         """
@@ -148,3 +167,6 @@ class ModelAdmin(WagtailModelAdmin):
             self.get_action(codename).get_button_extra_classes_for_obj()
         )
         return classes
+
+    def get_permissions_required_for_action(self, codename):
+        return self.get_action(codename).view_permissions_required

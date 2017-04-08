@@ -1,7 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.utils.six import string_types
-
 from wagtail.wagtailadmin.widgets import Button
 from ..widgets import ActionButton, DropdownMenuButton
 
@@ -46,7 +44,7 @@ class GenericButtonHelper(object):
             return attribute(request=self.request)
         return attribute()
 
-    def build_button_kwargs_for_action(self, codename, obj=None):
+    def build_button_kwargs_for_action(self, codename, obj=None, **kwargs):
         """
         Create a dictionary of arguments that can be used to create a button
         for action `codename` for `obj` in the event that no specifically named
@@ -54,31 +52,27 @@ class GenericButtonHelper(object):
         """
         ma = self.model_admin
 
-        # With the exception of 'permissions_required', these values
+        # With the exception of 'permission_required', these values
         # will be used as init kwargs to create a `self.button_class` instance
-        return {
-            'permissions_required': ma.get_permission_required_for_action(codename),
+        button_kwargs = {
             'url': ma.get_button_url_for_action(codename, obj),
             'label': ma.get_button_label_for_action(codename, obj),
             'title': ma.get_button_title_for_action(codename, obj),
             'classes': ma.get_button_css_classes_for_action(codename, obj),
+            'permission_required': codename,
         }
+        button_kwargs.update(kwargs)
+        return button_kwargs
 
     def create_button_instance_from_kwargs(self, obj, **button_kwargs):
         # Note: 'permissions_required' is popped from button_kwargs, and
         # so won't be passed as an init kwarg to `self.button_class`
-        perms_required = button_kwargs.pop('permissions_required', [])
-        if perms_required:
-            # If perms_required is a single string, make it into a tuple
-            if isinstance(perms_required, string_types):
-                perms_required = (perms_required, )
-            # Return `None` is the user doesn't have all necessary permissions
-            if not any(
-                self.permission_helper.user_has_permission_for_action(
-                    self.request.user, perm, obj
-                ) for perm in perms_required
-            ):
-                return None
+        pr = button_kwargs.pop('permission_required', None)
+        # Return `None` is the user doesn't have the necessary permission
+        if pr and not self.permission_helper.user_has_permission_for_action(
+            self.request.user, pr, obj
+        ):
+            return
         title = button_kwargs.pop('title', '')
         try:
             button_kwargs['attrs']['title'] = title
@@ -125,17 +119,18 @@ class GenericButtonHelper(object):
                     buttons.append(button)
         return buttons
 
-    def get_button(self, codename, obj=None, classes_add=(), classes_remove=()):
+    def get_button(self, codename, obj=None, classes_add=(),
+                   classes_remove=()):
         """If appropriate, return a single button instance for action
         `codename`, potentially for a specific `obj`. Otherwise, return `None`
         """
         button_kwargs = self.get_button_kwargs_for_action(codename, obj)
         if not button_kwargs:
-            return None
-        # `button_kwargs` might be a `Button` instance
+            return
+        # `button_kwargs` might be a `Button` instance. If so, return it as is
         if isinstance(button_kwargs, Button) and button_kwargs.show:
             return button_kwargs
-        # `button_kwargs should be a dict
+        # `button_kwargs should be a dict, so turn it into a `Button` instance
         button = self.create_button_instance_from_kwargs(obj, **button_kwargs)
         if button is not None:
             # `button` could be `None` if, for example, the user was found to
@@ -149,7 +144,7 @@ class GenericButtonHelper(object):
         creation of a button"""
         if not self.model_admin.inspect_view_enabled:
             # Prevent the button from appearing if the view is not enabled
-            return None
+            return
         return self.build_button_kwargs_for_action('inspect', obj)
 
     def unpublish_button_kwargs(self, request, obj):
@@ -158,7 +153,7 @@ class GenericButtonHelper(object):
         creation of a button"""
         if not getattr(obj, 'live', False):
             # Prevent the button from appearing if obj isn't 'live'
-            return None
+            return
         return self.build_button_kwargs_for_action('unpublish', obj)
 
     def view_draft_button_kwargs(self, request, obj):
@@ -167,8 +162,9 @@ class GenericButtonHelper(object):
         creation of a button"""
         if not getattr(obj, 'has_unpublished_changes', False):
             # Prevent the button from appearing if there is no draft to view
-            return None
-        return self.build_button_kwargs_for_action('view_draft', obj)
+            return
+        return self.build_button_kwargs_for_action(
+            'view_draft', obj, permission_required='edit')
 
     def view_live_button_kwargs(self, request, obj):
         """If appropriate, return a dict of arguments for defnining a
@@ -176,10 +172,10 @@ class GenericButtonHelper(object):
         creation of a button"""
         if not getattr(obj, 'live', False):
             # Prevent the button from appearing if obj isn't live
-            return None
+            return
         ma = self.model_admin
         # This particular button doesn't fit the usual pattern, so just define
-        # the dict here instead of deferring to `build_button_kwargs_for_action`
+        # the dict here instead of using `build_button_kwargs_for_action`
         return {
             'url': obj.relative_url(request.site),
             'label': ma.get_button_label_for_action('view_live', obj),

@@ -76,8 +76,6 @@ class ModelAdmin(WagtailModelAdmin):
         for action in self.get_actions_for_url_registration():
             pass
 
-    
-
     def get_index_view_button_names(self, request):
         """
         Return a list or tuple of 'codenames' for buttons that should be
@@ -168,5 +166,5 @@ class ModelAdmin(WagtailModelAdmin):
         )
         return classes
 
-    def get_permissions_required_for_action(self, codename):
-        return self.get_action(codename).view_permissions_required
+    def get_permission_required_for_action(self, codename):
+        return self.get_action(codename).view_permission_required

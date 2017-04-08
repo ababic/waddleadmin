@@ -51,15 +51,16 @@ class GenericButtonHelper(object):
         button is defined to do the same thing
         """
         ma = self.model_admin
+        cn = codename
 
         # With the exception of 'permission_required', these values
         # will be used as init kwargs to create a `self.button_class` instance
         button_kwargs = {
-            'url': ma.get_button_url_for_action(codename, obj),
-            'label': ma.get_button_label_for_action(codename, obj),
-            'title': ma.get_button_title_for_action(codename, obj),
-            'classes': ma.get_button_css_classes_for_action(codename, obj),
-            'permission_required': codename,
+            'url': ma.get_button_url_for_action(cn, obj),
+            'label': ma.get_button_label_for_action(cn, obj),
+            'title': ma.get_button_title_for_action(cn, obj),
+            'classes': ma.get_button_css_classes_for_action(cn, obj),
+            'permission_required': ma.get_permission_required_for_action(cn),
         }
         button_kwargs.update(kwargs)
         return button_kwargs
@@ -163,8 +164,7 @@ class GenericButtonHelper(object):
         if not getattr(obj, 'has_unpublished_changes', False):
             # Prevent the button from appearing if there is no draft to view
             return
-        return self.build_button_kwargs_for_action(
-            'view_draft', obj, permission_required='edit')
+        return self.build_button_kwargs_for_action('view_draft', obj)
 
     def view_live_button_kwargs(self, request, obj):
         """If appropriate, return a dict of arguments for defnining a

@@ -27,7 +27,7 @@ class ModelAdminAction(object):
         view_url_registration_required=True,
         view_url_pattern='',
         view_url_name='',
-        view_permissions_required=[],
+        view_permission_required=None,
         template_name='',
     ):
 
@@ -73,7 +73,7 @@ class ModelAdminAction(object):
         self.view_url_registration_required = view_url_registration_required
         self.view_url_pattern = view_url_pattern
         self.view_url_name = view_url_name
-        self.view_permissions_required = view_permissions_required
+        self.view_permission_required = view_permission_required
         self.template_name = template_name
 
     @cached_property
@@ -178,29 +178,29 @@ CREATE_ACTION = ('create', {
     'verbose_name': _('add'),
     'instance_specific': False,
     'button_extra_classes': 'bicolor icon icon-plus',
-    'view_permissions_required': ['create']
+    'view_permission_required': 'create'
 })
 
 INDEX_ACTION = ('index', {
     'verbose_name': _('list'),
     'instance_specific': False,
-    'view_permissions_required': ['list'],
+    'view_permission_required': 'list',
 })
 
 INSPECT_ACTION = ('inspect', {
     'verbose_name': _('inspect'),
-    'view_permissions_required': ['inspect'],
+    'view_permission_required': 'inspect',
 })
 
 EDIT_ACTION = ('edit', {
     'verbose_name': _('edit'),
-    'view_permissions_required': ['edit'],
+    'view_permission_required': 'edit',
 })
 
 DELETE_ACTION = ('delete', {
     'verbose_name': _('delete'),
     'button_extra_classes': 'no',
-    'view_permissions_required': ['delete'],
+    'view_permission_required': 'delete',
 })
 
 DEFAULT_MODEL_ACTIONS = [INDEX_ACTION, CREATE_ACTION, INSPECT_ACTION,
@@ -211,54 +211,54 @@ DEFAULT_MODEL_ACTIONS = [INDEX_ACTION, CREATE_ACTION, INSPECT_ACTION,
 CHOOSE_PARENT_ACTION = ('choose_parent', {
     'verbose_name': _('choose parent page'),
     'instance_specific': False,
-    'view_permissions_required': ['create']
+    'view_permission_required': 'create'
 })
 
 ADD_SUBPAGE_ACTION = ('add_subpage', {
     'verbose_name': _('add sub-page'),
+    'view_permission_required': 'edit',
     'view_url_registration_required': False,
-    'view_permissions_required': ['edit'],
 })
 
 COPY_ACTION = ('copy', {
     'verbose_name': _('copy'),
-    'view_permissions_required': ['copy'],
+    'view_permission_required': 'copy',
     'view_url_registration_required': False,
 })
 
 MOVE_ACTION = ('move', {
     'verbose_name': _('move'),
-    'view_permissions_required': ['edit'],
+    'view_permission_required': 'edit',
     'view_url_registration_required': False,
 })
 
 PREVIEW_ACTION = ('preview', {
     'verbose_name': _('preview'),
-    'view_permissions_required': ['edit'],
+    'view_permission_required': 'edit',
     'view_url_registration_required': False,
 })
 
 VIEW_DRAFT_ACTION = ('view_draft', {
     'verbose_name': _('view draft'),
-    'view_permissions_required': ['edit'],
+    'view_permission_required': 'edit',
     'view_url_registration_required': False,
 })
 
 PUBLISH_ACTION = ('publish', {
     'verbose_name': _('publish'),
-    'view_permissions_required': ['publish'],
+    'view_permission_required': 'publish',
     'view_url_registration_required': False,
 })
 
 UNPUBLISH_ACTION = ('unpublish', {
     'verbose_name': _('unpublish'),
-    'view_permissions_required': ['unpublish'],
+    'view_permission_required': 'unpublish',
     'view_url_registration_required': False,
 })
 
 VIEW_REVISIONS_ACTION = ('revisions_index', {
     'verbose_name': _('view revisions'),
-    'view_permissions_required': ['edit'],
+    'view_permission_required': 'edit',
     'view_url_registration_required': False,
 })
 

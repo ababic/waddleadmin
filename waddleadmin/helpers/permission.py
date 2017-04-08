@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from wagtail.contrib.modeladmin.helpers.permission import (
+from wagtail.contrib.modeladmin.helpers import (
     PermissionHelper as WagtailPermissionHelper,
     PagePermissionHelper as WagtailPagePermissionHelper
 )

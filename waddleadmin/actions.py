@@ -76,8 +76,8 @@ class ModelAdminAction(object):
         self.view_permission_required = view_permission_required
         self.template_name = template_name
 
-    @cached_property
-    def url_definition(self):
+    @property
+    def url(self):
         return url(
             self.get_url_pattern(), self.connect_to_view, self.get_url_name()
         )
@@ -90,7 +90,7 @@ class ModelAdminAction(object):
         return self.url_name or self.url_helper.get_action_url_name(
             self.codename)
 
-    def get_url_for_obj(self, obj):
+    def get_url(self, obj):
         return self.url_helper.get_action_url_for_obj(self.codename, obj)
 
     def get_templates(self):
@@ -119,7 +119,7 @@ class ModelAdminAction(object):
             )
         return self.view_class.as_view(self.model_admin)(**url_kwargs)
 
-    def get_button_label_for_obj(self, obj):
+    def get_button_label(self, obj):
         if self.button_label:
             if callable(self.button_label):
                 try:
@@ -132,7 +132,7 @@ class ModelAdminAction(object):
             return self.button_label
         return
 
-    def get_button_title_for_obj(self, obj):
+    def get_button_title(self, obj):
         if self.button_title:
             if callable(self.button_title):
                 try:
@@ -145,7 +145,7 @@ class ModelAdminAction(object):
             return self.button_title
         return
 
-    def get_button_url_for_obj(self, obj):
+    def get_button_url(self, obj):
         if self.button_url:
             if callable(self.button_url):
                 try:
@@ -156,9 +156,9 @@ class ModelAdminAction(object):
                     except TypeError:
                         return self.button_url()
             return self.button_url
-        return self.get_url_for_obj(obj)
+        return self.get_url(obj)
 
-    def get_button_extra_classes_for_obj(self, obj):
+    def get_button_extra_classes(self, obj):
         if self.button_extra_classes:
             if callable(self.button_extra_classes):
                 try:

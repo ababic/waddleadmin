@@ -69,12 +69,11 @@ class ModelAdmin(WagtailModelAdmin):
     def get_action(self, codename):
         self._actions.get(codename)
 
-    def get_actions_for_url_registration(self):
-        return {k: v for k, v in self._actions if v.url_registration_required}
-
     def get_admin_urls_for_registration(self):
-        for action in self.get_actions_for_url_registration():
-            pass
+        return [
+            action.url for codename, action in self.actions.items()
+            if action.view_url_registration_required
+        ]
 
     def get_index_view_button_names(self, request):
         """
@@ -112,7 +111,7 @@ class ModelAdmin(WagtailModelAdmin):
         Return a URL to be used as the `href` attribute for buttons with action
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
-        url = self.get_action(codename).get_button_url_for_obj(obj)
+        url = self.get_action(codename).get_button_url(obj)
         return url or self.url_helper.get_action_url_for_obj(codename, obj)
 
     def get_button_label_for_action(self, codename, obj):
@@ -121,7 +120,7 @@ class ModelAdmin(WagtailModelAdmin):
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
         action = self.get_action(codename)
-        label = action.get_button_label_for_obj(obj)
+        label = action.get_button_label(obj)
         if label:
             return label
         if codename == 'create':
@@ -134,7 +133,7 @@ class ModelAdmin(WagtailModelAdmin):
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
         action = self.get_action(codename)
-        title = action.get_button_title_for_obj(obj)
+        title = action.get_button_title(obj)
         if title:
             return title
         if codename == 'create':
@@ -162,7 +161,7 @@ class ModelAdmin(WagtailModelAdmin):
         """
         classes = set(self.default_button_css_classes)
         classes.extend(
-            self.get_action(codename).get_button_extra_classes_for_obj()
+            self.get_action(codename).get_button_extra_classes()
         )
         return classes
 

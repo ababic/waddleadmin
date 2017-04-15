@@ -228,7 +228,7 @@ COPY_ACTION = ('copy', {
 
 MOVE_ACTION = ('move', {
     'verbose_name': _('move'),
-    'view_permission_required': 'edit',
+    'view_permission_required': 'move',
     'view_url_registration_required': False,
 })
 

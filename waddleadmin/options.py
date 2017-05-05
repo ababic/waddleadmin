@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from wagtail.contrib.modeladmin.options import ModelAdmin as WagtailModelAdmin
 
 from .actions import ( # noqa
-    ModelAdminAction, DEFAULT_MODEL_ACTIONS, DEFAULT_PAGE_MODEL_ACTIONS
+    ModelAction, DEFAULT_MODEL_ACTIONS, DEFAULT_PAGE_MODEL_ACTIONS
 )
 from .helpers.permission import PermissionHelper, PagePermissionHelper
 from .helpers.url import AdminURLHelper, PageAdminURLHelper
@@ -26,12 +26,12 @@ class ModelAdmin(WagtailModelAdmin):
         # Just these extra attributes for reference
         self.model_name = force_text(self.opts.verbose_name)
         self.model_name_plural = force_text(self.opts.verbose_name_plural)
-        # Create ModelAdminAction instances from definitions
+        # Create ModelAction instances from definitions
         self._actions = {}
         for action in self.get_action_definitions():
             codename, kwargs = action
             kwargs.update({'model_admin': self, 'codename': codename})
-            self._actions[codename] = ModelAdminAction(**kwargs)
+            self._actions[codename] = ModelAction(**kwargs)
 
     def get_permission_helper_class(self):
         # No changes here, really! This is just to load our new versions of

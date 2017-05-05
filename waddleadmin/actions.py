@@ -5,13 +5,12 @@ import six
 
 from django.conf.urls import url
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 codename_pattern = re.compile("^([a-z_]+)+$")
 
 
-class ModelAdminAction(object):
+class ModelAction(object):
 
     def __init__(
         self,

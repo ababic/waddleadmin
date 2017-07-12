@@ -19,9 +19,10 @@ class GenericButtonHelper(object):
         self.model_admin = model_admin
         self.permission_helper = model_admin.permission_helper
 
-    def get_button_kwargs_for_action(self, codename, obj=None):
+    def get_button_kwargs_for_action(self, codename, obj=None,
+                                     build_kwargs_if_no_method_found=True):
         """
-        Attempt to find a method or attribute to that will give us the values
+        Attempt to find a method or attribute that will give us the values
         needed to define a button for action `codename` (potentially for a
         specific `obj`)
         """
@@ -30,12 +31,18 @@ class GenericButtonHelper(object):
             attribute = getattr(self.model_admin, attribute_name)
         elif hasattr(self, attribute_name):
             attribute = getattr(self, attribute_name)
-        else:
-            # If no method was found, build our own dictionary
+        elif build_kwargs_if_no_method_found:
+            # Automatically generate kwargs for button creation
             return self.build_button_kwargs_for_action(codename, obj)
+        else:
+            # No suitable button definition available
+            return
 
+        # Call the method matching attribute_name
         if not callable(attribute):
             return attribute
+
+        # TODO: Use an 'accepts_kwarg()' method instead of excepting TypeErrors
         try:
             # Try to call the method with the standard `request` / `obj` args
             return attribute(request=self.request, obj=obj)
@@ -65,28 +72,57 @@ class GenericButtonHelper(object):
         button_kwargs.update(kwargs)
         return button_kwargs
 
-    def create_button_instance_from_kwargs(self, obj, **button_kwargs):
-        # Note: 'permissions_required' is popped from button_kwargs, and
-        # so won't be passed as an init kwarg to `self.button_class`
-        pr = button_kwargs.pop('permission_required', None)
-        # Return `None` is the user doesn't have the necessary permission
-        if pr and not self.permission_helper.user_has_permission_for_action(
-            self.request.user, pr, obj
-        ):
+    def create_button_from_button_kwargs(self, button_kwargs, obj=None,
+                                         classes_add=(), classes_remove=()):
+        if button_kwargs is None:
+            # A None value indicates that this button shouldn't be defined
             return
+        # `button_kwargs` might be a `Button` instance. If so, return it as is
+        if isinstance(button_kwargs, Button) and button_kwargs.show:
+            return button_kwargs
+
+        # The most common outcome: `button_kwargs` is dict of kwargs for
+        # creating a `Button` instance, so let's try that
+
+        # Firstly, we check that the user has sufficient pemissions for the
+        # action
+        permission_codename = button_kwargs.pop('permission_required', None)
+        if permission_codename and not self.permission_helper.user_can(
+            self.request.user, permission_codename, obj
+        ):
+            # The user has insufficient permissions
+            return
+
+        # Add title to `attrs` so the Button renders it as `title` attribue
         title = button_kwargs.pop('title', '')
         try:
             button_kwargs['attrs']['title'] = title
         except KeyError:
             button_kwargs['attrs'] = {'title': title}
+
         # Always make 'classes' a set
         button_kwargs['classes'] = set(button_kwargs.get('classes', []))
-        return self.button_class(**button_kwargs)
 
-    def get_button_set_for_obj(self, obj, codename_list, classes_add=(),
-                               classes_remove=()):
+        # Create an an actual `Button`
+        button = self.button_class(**button_kwargs)
+
+        # Modify CSS classes before returning
+        self.modify_button_css_classes(button, classes_add, classes_remove)
+        return button
+
+    def get_button(self, codename, obj=None, classes_add=(),
+                   classes_remove=()):
+        """If appropriate, return an individual button instance for action
+        `codename`, potentially for a specific `obj`. Otherwise, return `None`
+        """
+        definition = self.get_button_kwargs_for_action(codename, obj)
+        return self.create_button_from_button_kwargs(
+            definition, obj, classes_add, classes_remove
+        )
+
+    def get_button_set(self, obj, codename_list, classes_add=(),
+                       classes_remove=()):
         button_definitions = []
-        buttons = []
 
         for val in codename_list:
             if isinstance(val, tuple):
@@ -103,41 +139,11 @@ class GenericButtonHelper(object):
                 )
 
         for definition in button_definitions:
-            # `definition` could be a `Button` instance
-            if isinstance(definition, Button) and definition.show:
-                buttons.append(definition)
-            elif definition:
-                # `definition` is a dict of init kwargs
-                button = self.create_button_instance_from_kwargs(
-                    obj, **definition
-                )
-                if button:
-                    # `button` could be `None` if, for example, the user was
-                    # found to have insufficient permissions
-                    self.modify_button_css_classes(
-                        button, classes_add, classes_remove
-                    )
-                    buttons.append(button)
-        return buttons
-
-    def get_button(self, codename, obj=None, classes_add=(),
-                   classes_remove=()):
-        """If appropriate, return a single button instance for action
-        `codename`, potentially for a specific `obj`. Otherwise, return `None`
-        """
-        button_kwargs = self.get_button_kwargs_for_action(codename, obj)
-        if not button_kwargs:
-            return
-        # `button_kwargs` might be a `Button` instance. If so, return it as is
-        if isinstance(button_kwargs, Button) and button_kwargs.show:
-            return button_kwargs
-        # `button_kwargs should be a dict, so turn it into a `Button` instance
-        button = self.create_button_instance_from_kwargs(obj, **button_kwargs)
-        if button is not None:
-            # `button` could be `None` if, for example, the user was found to
-            # have insufficient permissions
-            self.modify_button_css_classes(button, classes_add, classes_remove)
-        return button
+            button = self.create_button_from_button_kwargs(
+                definition, obj, classes_add, classes_remove
+            )
+            if button is not None:
+                yield button
 
     def inspect_button_kwargs(self, request, obj):
         """If appropriate, return a dict of arguments for defnining an

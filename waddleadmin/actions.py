@@ -80,6 +80,7 @@ class ModelAction(object):
 
     def format_descriptive_string(self, string, obj):
         return string.format(
+            action_name=self.verbose_name,
             model_name_singular=self.model_admin.model_name_singular,
             model_name_plural=self.model_admin.model_name_plural,
             obj=obj,

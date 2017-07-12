@@ -148,40 +148,14 @@ class ModelAdmin(WagtailModelAdmin):
         Return a string to be used as the `label` text for buttons with action
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
-        action = self.get_action(codename)
-        label = action.get_button_label(obj)
-        if label:
-            return label
-        if codename == 'create':
-            return _('Add %s') % self.model_verbose_name
-        return action.verbose_name.capitalize()
+        return self.get_action(codename).get_button_label(obj)
 
     def get_button_title_for_action(self, codename, obj):
         """
         Return a string to be used as the `title` text for buttons with action
         `codename` for `obj` (an instance of `self.model` or `None`)
         """
-        action = self.get_action(codename)
-        title = action.get_button_title(obj)
-        if title:
-            return title
-        if codename == 'create':
-            return _('Create a new %s') % self.model_verbose_name
-        if codename == 'dropdown':
-            return _("View more options for '%s'") % obj
-        if codename == 'view_draft':
-            return _("Preview draft version of '%s'") % obj
-        if codename == 'view_live':
-            return _("View live version of '%s'") % obj
-        if codename == 'revisions_index':
-            return _("View revision history for '%s'") % obj
-        if codename == 'add_subpage':
-            return _("Add child page to '%s'") % obj
-        return _("%(action)s %(model_name)s '%(obj_representation)s'") % {
-            'action': action.verbose_name.capitalize(),
-            'model_name': self.model_verbose_name,
-            'obj_representation': obj,
-        }
+        return self.get_action(codename).get_button_title(obj)
 
     def get_button_classes_for_action(self, codename, obj):
         """

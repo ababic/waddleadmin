@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
+from django.utils.translation import ugettext_lazy as _
 from wagtail.wagtailadmin.widgets import Button
+from ..utils.inspection import accepts_kwarg
 from ..widgets import ActionButton, DropdownMenuButton
 
 
@@ -8,6 +10,7 @@ class GenericButtonHelper(object):
 
     button_class = ActionButton
     dropdown_button_class = DropdownMenuButton
+    dropdown_button_title_text = _('View more options')
 
     @classmethod
     def modify_button_css_classes(cls, button, add, remove):
@@ -28,9 +31,9 @@ class GenericButtonHelper(object):
         """
         attribute_name = '%s_button_kwargs' % codename
         if hasattr(self.model_admin, attribute_name):
-            attribute = getattr(self.model_admin, attribute_name)
+            method = getattr(self.model_admin, attribute_name)
         elif hasattr(self, attribute_name):
-            attribute = getattr(self, attribute_name)
+            method = getattr(self, attribute_name)
         elif build_kwargs_if_no_method_found:
             # Automatically generate kwargs for button creation
             return self.build_button_kwargs_for_action(codename, obj)
@@ -39,17 +42,14 @@ class GenericButtonHelper(object):
             return
 
         # Call the method matching attribute_name
-        if not callable(attribute):
-            return attribute
-
-        # TODO: Use an 'accepts_kwarg()' method instead of excepting TypeErrors
-        try:
-            # Try to call the method with the standard `request` / `obj` args
-            return attribute(request=self.request, obj=obj)
-        except TypeError:
-            # Some button definition methods don't take `obj`
-            return attribute(request=self.request)
-        return attribute()
+        kwargs = {}
+        if not callable(method):
+            return method
+        if accepts_kwarg(method, 'request'):
+            kwargs['request'] = self.request
+        if accepts_kwarg(method, 'obj'):
+            kwargs['obj'] = obj
+        return method(**kwargs)
 
     def build_button_kwargs_for_action(self, codename, obj=None, **kwargs):
         """
@@ -74,24 +74,20 @@ class GenericButtonHelper(object):
 
     def create_button_from_button_kwargs(self, button_kwargs, obj=None,
                                          classes_add=(), classes_remove=()):
-        if button_kwargs is None:
-            # A None value indicates that this button shouldn't be defined
+        if not button_kwargs:
+            # A None value or empty dict indicates that this button shouldn't
+            # be defined
             return
-        # `button_kwargs` might be a `Button` instance. If so, return it as is
-        if isinstance(button_kwargs, Button) and button_kwargs.show:
-            return button_kwargs
 
-        # The most common outcome: `button_kwargs` is dict of kwargs for
-        # creating a `Button` instance, so let's try that
+        # `button_kwargs` should be a dictionary of kwargs for creating a
+        # `Button` instance, so let's try that
 
-        # Firstly, we check that the user has sufficient pemissions for the
-        # action
+        # Check that the user has sufficient pemissions for the action
         permission_codename = button_kwargs.pop('permission_required', None)
         if permission_codename and not self.permission_helper.user_can(
             self.request.user, permission_codename, obj
         ):
-            # The user has insufficient permissions
-            return
+            return  # The user has insufficient permissions
 
         # Add title to `attrs` so the Button renders it as `title` attribue
         title = button_kwargs.pop('title', '')
@@ -120,38 +116,42 @@ class GenericButtonHelper(object):
             definition, obj, classes_add, classes_remove
         )
 
-    def get_button_set(self, obj, codename_list, classes_add=(),
-                       classes_remove=()):
-        button_definitions = []
-
+    def get_button_set_definitions(self, obj, codename_list):
         for val in codename_list:
             if isinstance(val, tuple):
-                items = self.get_button_set_for_obj(obj, val[1])
-                title = self.model_admin.get_button_title_for_action(
-                    'dropdown', obj
+                label, included_codenames = val
+                items = self.get_button_set(obj, included_codenames)
+                title = self.dropdown_button_title_text
+                yield self.dropdown_button_class(
+                    label=label, items=items, attrs={'title': title}
                 )
-                button_definitions.append(self.dropdown_button_class(
-                    label=val[0], items=items, attrs={'title': title}
-                ))
             else:
-                button_definitions.append(
-                    self.get_button_kwargs_for_action(val, obj)
-                )
+                definition = self.get_button_kwargs_for_action(val, obj)
+                if definition:
+                    yield definition
 
-        for definition in button_definitions:
-            button = self.create_button_from_button_kwargs(
-                definition, obj, classes_add, classes_remove
-            )
-            if button is not None:
-                yield button
+    def get_button_set(self, obj, codename_list, classes_add=(),
+                       classes_remove=()):
+        for definition in self.get_button_set_definitions(obj, codename_list):
+            if isinstance(definition, Button):
+                # 'definition' could be a `DropdownMenuButton` or an
+                # `ActionButton` instance returned by a custom definition
+                # method instead of a dictionary (which is acceptable)
+                if definition.show:
+                    yield definition
+            else:
+                button = self.create_button_from_button_kwargs(
+                    definition, obj, classes_add, classes_remove
+                )
+                if button:
+                    yield button
 
     def inspect_button_kwargs(self, request, obj):
         """If appropriate, return a dict of arguments for defnining an
         'inspect' button for `obj`. Otherwise, return `None` to prevent the
         creation of a button"""
         if not self.model_admin.inspect_view_enabled:
-            # Prevent the button from appearing if the view is not enabled
-            return
+            return  # button shouldn't be rendered
         return self.build_button_kwargs_for_action('inspect', obj)
 
     def unpublish_button_kwargs(self, request, obj):
@@ -159,8 +159,7 @@ class GenericButtonHelper(object):
         'unpublish' button for `obj`. Otherwise, return `None` to prevent the
         creation of a button"""
         if not getattr(obj, 'live', False):
-            # Prevent the button from appearing if obj isn't 'live'
-            return
+            return  # button shouldn't be rendered
         return self.build_button_kwargs_for_action('unpublish', obj)
 
     def view_draft_button_kwargs(self, request, obj):
@@ -168,8 +167,7 @@ class GenericButtonHelper(object):
         'view draft' button for `obj`. Otherwise, return `None` to prevent the
         creation of a button"""
         if not getattr(obj, 'has_unpublished_changes', False):
-            # Prevent the button from appearing if there is no draft to view
-            return
+            return  # button shouldn't be rendered
         return self.build_button_kwargs_for_action('view_draft', obj)
 
     def view_live_button_kwargs(self, request, obj):
@@ -177,11 +175,11 @@ class GenericButtonHelper(object):
         'view live' button for `obj`. Otherwise, return `None` to prevent the
         creation of a button"""
         if not getattr(obj, 'live', False):
-            # Prevent the button from appearing if obj isn't live
-            return
-        ma = self.model_admin
+            return  # button shouldn't be rendered
+
         # This particular button doesn't fit the usual pattern, so just define
         # the dict here instead of using `build_button_kwargs_for_action`
+        ma = self.model_admin
         return {
             'url': obj.relative_url(request.site),
             'label': ma.get_button_label_for_action('view_live', obj),

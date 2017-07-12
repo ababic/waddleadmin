@@ -116,11 +116,11 @@ class ModelAdmin(WagtailModelAdmin):
             return self.index_view_button_names
         if self.is_pagemodel:
             return (
-                'inspect', 'edit', 'view_live', (
+                'edit', 'inspect', 'view_live', (
                     _('More'), ('copy', 'delete', 'unpublish')
                 ),
             )
-        return ('inspect', 'edit', 'delete')
+        return ('edit', 'inspect', 'delete')
 
     def get_inspect_view_button_names(self, request):
         """

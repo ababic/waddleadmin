@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from waddleadmin.version_utils import get_version, get_stable_branch_name
+from waddleadmin.utils.version import get_version, get_stable_branch_name
 
 # major.minor.patch.release.number
 # release must be one of alpha, beta, rc, or final

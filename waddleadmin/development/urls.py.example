@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.conf.urls import include, url
-from wagtailmenus.tests import urls as test_urls
+from waddleadmin.tests import urls as test_urls
 
 urlpatterns = []
 if settings.DEBUG:

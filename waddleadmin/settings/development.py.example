@@ -13,7 +13,6 @@ INSTALLED_APPS += (
     'debug_toolbar',
     'waddleadmin.tests',
     'waddleadmin.development',
-    'wagtail.contrib.wagtailstyleguide',
 )
 
 DATABASES = {

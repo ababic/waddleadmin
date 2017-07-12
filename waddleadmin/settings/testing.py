@@ -11,6 +11,7 @@ DATABASES = {
 }
 
 INSTALLED_APPS += (
+    'wagtail.tests.testapp',
     'waddleadmin.tests',
 )
 

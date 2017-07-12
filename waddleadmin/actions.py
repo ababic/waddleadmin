@@ -1,13 +1,11 @@
 from __future__ import unicode_literals
 
-import re
 import six
 
 from django.conf.urls import url
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.text import capfirst
 from django.utils.translation import ugettext_lazy as _
-
-codename_pattern = re.compile("^([a-z_]+)+$")
 
 
 class ModelAction(object):
@@ -17,6 +15,7 @@ class ModelAction(object):
         codename,
         model_admin,
         verbose_name='',
+        description='',
         instance_specific=True,
         button_label=None,
         button_title=None,
@@ -26,60 +25,32 @@ class ModelAction(object):
         view_url_registration_required=True,
         view_url_pattern='',
         view_url_name='',
-        view_permission_required=None,
+        permission_required=None,
         template_name='',
+        **kwargs
     ):
-
-        if not codename_pattern.match(codename):
-            raise ImproperlyConfigured(
-                "You're trying to register an action with codename '%s' on "
-                "your '%s' class. Action codenames must contain only "
-                "lower case ascii letters and underscores" % (
-                    codename, model_admin.__class__.__name__
-                )
-            )
-
-        if codename in model_admin._actions.keys():
-            if model_admin.model_actions:
-                raise ImproperlyConfigured(
-                    "Your '%s' class has more than one model actions defined "
-                    "with the codename '%s'. Model action definitions must "
-                    "have unique codenames" % (
-                        model_admin.__class__.__name__, codename
-                    )
-                )
-            raise ImproperlyConfigured(
-                "Your '%s' class has more than one model actions defined with "
-                "the codename '%s'. Model action definitions must have unique "
-                "codenames. If you wish to override default model actions, "
-                "try using the `model_actions` attribute instead of "
-                "`extra_model_actions`" % (
-                    model_admin.__class__.__name__, codename
-                )
-            )
 
         self.codename = codename
         self.model_admin = model_admin
+        self.url_helper = model_admin.url_helper
         self.model = model_admin.model
         self.verbose_name = verbose_name or codename.replace('_', ' ')
+        self.description = description
         self.instance_specific = instance_specific
+        self.permission_required = permission_required
+
         self.button_label = button_label
-        self.button_title = button_title
         self.button_url = button_url
+        self.button_title = button_title
         self.button_extra_classes = button_extra_classes
-        self.url_helper = model_admin.url_helper
+
         self.view_class = view_class
         self.view_url_registration_required = view_url_registration_required
         self.view_url_pattern = view_url_pattern
         self.view_url_name = view_url_name
-        self.view_permission_required = view_permission_required
         self.template_name = template_name
 
-    @property
-    def url(self):
-        return url(
-            self.get_url_pattern(), self.connect_to_view, self.get_url_name()
-        )
+        self.init_kwargs = kwargs
 
     def get_url_pattern(self):
         return self.url_pattern or self.url_helper.get_action_url_pattern(
@@ -97,12 +68,48 @@ class ModelAction(object):
             return [self.template_name]
         return self.model_admin.get_templates(self.codename)
 
+    def get_modeladmin_view_method(self):
+        return getattr(
+            self.model_admin, '%s_view' % self.codename, None
+        )
+
     def get_view_class(self):
         return self.view_class or getattr(
             self.model_admin, '%s_view_class' % self.codename, None
         )
 
-    def connect_to_view(self, **url_kwargs):
+    def format_descriptive_string(self, string, obj):
+        return string.format(
+            model_name_singular=self.model_admin.model_name_singular,
+            model_name_plural=self.model_admin.model_name_plural,
+            obj=obj,
+        )
+
+    def get_description(self, obj):
+        return self.format_descriptive_string(self.description, obj)
+
+    def get_button_label(self, obj):
+        label = self.button_label or self.verbose_name
+        return capfirst(self.format_descriptive_string(label, obj))
+
+    def get_button_title(self, obj):
+        title = self.button_title or self.description
+        return capfirst(self.format_descriptive_string(title, obj))
+
+    def get_button_url(self, obj):
+        return self.button_url or self.get_url(obj)
+
+    def get_button_extra_classes(self, obj, request=None):
+        if self.button_extra_classes:
+            if isinstance(self.button_extra_classes, six.string_types):
+                return self.button_extra_classes.split()
+            return list(self.button_extra_classes)
+        return []
+
+    def render_view(self, request, *args, **kwargs):
+        if self.get_modeladmin_view_method():
+            return self.get_modeladmin_view_method(request, *args, **kwargs)
+
         view_class = self.get_view_class()
         if view_class is None:
             raise ImproperlyConfigured(
@@ -116,153 +123,164 @@ class ModelAction(object):
                     self.codename,
                 )
             )
-        return self.view_class.as_view(self.model_admin)(**url_kwargs)
+        view = self.view_class.as_view(self.model_admin)
+        return view(request, *args, **kwargs)
 
-    def get_button_label(self, obj):
-        if self.button_label:
-            if callable(self.button_label):
-                try:
-                    return self.button_label(obj, self.model)
-                except TypeError:
-                    try:
-                        return self.button_label(obj)
-                    except TypeError:
-                        return self.button_label()
-            return self.button_label
-        return
+    @property
+    def url(self):
+        return url(
+            self.get_url_pattern(), self.render_view, self.get_url_name()
+        )
 
-    def get_button_title(self, obj):
-        if self.button_title:
-            if callable(self.button_title):
-                try:
-                    return self.button_title(obj, self.model)
-                except TypeError:
-                    try:
-                        return self.button_title(obj)
-                    except TypeError:
-                        return self.button_title()
-            return self.button_title
-        return
+# Translators: The default description of an action relating to a specific object e.g. "delete the event 'Christmas day'". Used to populate 'title' attributes on button links
+default_action_description = _("{action_name} the {model_name_singular} '{obj!s}'")
 
-    def get_button_url(self, obj):
-        if self.button_url:
-            if callable(self.button_url):
-                try:
-                    return self.button_url(obj, self.model)
-                except TypeError:
-                    try:
-                        return self.button_url(obj)
-                    except TypeError:
-                        return self.button_url()
-            return self.button_url
-        return self.get_url(obj)
-
-    def get_button_extra_classes(self, obj):
-        if self.button_extra_classes:
-            if callable(self.button_extra_classes):
-                try:
-                    return self.button_extra_classes(obj, self.model)
-                except TypeError:
-                    try:
-                        return self.button_extra_classes(obj)
-                    except TypeError:
-                        return self.button_extra_classes()
-            if isinstance(self.button_extra_classes, six.string_types):
-                return self.button_extra_classes.split()
-            return list(self.attr)
-        return []
-
-
-CREATE_ACTION = ('create', {
+CREATE_ACTION = {
+    'instance_specific': False,
     'verbose_name': _('add'),
-    'instance_specific': False,
+    'description': 'Create a new {model_name_singular}',
+    'button_label': _('Add {model_name_singular}'),
     'button_extra_classes': 'bicolor icon icon-plus',
-    'view_permission_required': 'create'
-})
+    'permission_required': 'create',
+    'view_class': 'wagtail.contrib.modeladmin.views.CreateView',
+}
 
-INDEX_ACTION = ('index', {
-    'verbose_name': _('list'),
+INDEX_ACTION = {
     'instance_specific': False,
-    'view_permission_required': 'list',
-})
+    'verbose_name': _('list'),
+    'description': _('View a list of existing {model_name_plural}'),
+    'button_label': _('List {model_name_plural}'),
+    'permission_required': 'list',
+    'view_class': 'waddleadmin.views.IndexView',
+}
 
-INSPECT_ACTION = ('inspect', {
+INSPECT_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('inspect'),
-    'view_permission_required': 'inspect',
-})
+    'description': default_action_description,
+    'permission_required': 'inspect',
+    'view_class': 'waddleadmin.views.InspectView',
+}
 
-EDIT_ACTION = ('edit', {
+EDIT_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('edit'),
-    'view_permission_required': 'edit',
-})
+    'description': default_action_description,
+    'permission_required': 'edit',
+    'view_class': 'waddleadmin.views.EditView',
+}
 
-DELETE_ACTION = ('delete', {
+DELETE_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('delete'),
+    'description': default_action_description,
     'button_extra_classes': 'no',
-    'view_permission_required': 'delete',
-})
+    'permission_required': 'delete',
+    'view_class': 'waddleadmin.views.DeleteView',
+}
 
-DEFAULT_MODEL_ACTIONS = [INDEX_ACTION, CREATE_ACTION, INSPECT_ACTION,
-                         EDIT_ACTION, DELETE_ACTION]
+DEFAULT_MODEL_ACTIONS = {
+    'index': INDEX_ACTION,
+    'create': CREATE_ACTION,
+    'inspect': INSPECT_ACTION,
+    'edit': EDIT_ACTION,
+    'delete': DELETE_ACTION,
+}
 
 # Page-specific actions
 
-CHOOSE_PARENT_ACTION = ('choose_parent', {
-    'verbose_name': _('choose parent page'),
+CHOOSE_PARENT_ACTION = {
     'instance_specific': False,
-    'view_permission_required': 'create'
-})
+    'verbose_name': _('choose parent page'),
+    'description': _('Choose parent page for new {model_name_singular}'),
+    'permission_required': 'create',
+}
 
-ADD_SUBPAGE_ACTION = ('add_subpage', {
-    'verbose_name': _('add sub-page'),
-    'view_permission_required': 'edit',
+ADD_SUBPAGE_ACTION = {
+    'instance_specific': True,
+    'verbose_name': _('add child page'),
+    'description': _("Add child page to '{obj}'"),
+    'permission_required': 'edit',
     'view_url_registration_required': False,
-})
+}
 
-COPY_ACTION = ('copy', {
+COPY_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('copy'),
-    'view_permission_required': 'copy',
+    'description': default_action_description,
+    'permission_required': 'copy',
     'view_url_registration_required': False,
-})
+}
 
-MOVE_ACTION = ('move', {
+MOVE_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('move'),
-    'view_permission_required': 'move',
+    'description': default_action_description,
+    'permission_required': 'move',
     'view_url_registration_required': False,
-})
+}
 
-PREVIEW_ACTION = ('preview', {
+PREVIEW_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('preview'),
-    'view_permission_required': 'edit',
+    'description': _("Preview draft version of '{obj}'"),
+    'permission_required': 'edit',
     'view_url_registration_required': False,
-})
+}
 
-VIEW_DRAFT_ACTION = ('view_draft', {
+VIEW_LIVE_ACTION = {
+    'instance_specific': True,
+    'verbose_name': _('view live'),
+    'description': _("View live version of '{obj}'"),
+    'view_url_registration_required': True,
+}
+
+VIEW_DRAFT_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('view draft'),
-    'view_permission_required': 'edit',
+    'description': _("Preview draft version of '{obj}'"),
+    'permission_required': 'edit',
     'view_url_registration_required': False,
-})
+}
 
-PUBLISH_ACTION = ('publish', {
+PUBLISH_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('publish'),
-    'view_permission_required': 'publish',
+    'description': default_action_description,
+    'permission_required': 'publish',
     'view_url_registration_required': False,
-})
+}
 
-UNPUBLISH_ACTION = ('unpublish', {
+UNPUBLISH_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('unpublish'),
-    'view_permission_required': 'unpublish',
+    'description': default_action_description,
+    'permission_required': 'unpublish',
     'view_url_registration_required': False,
-})
+}
 
-VIEW_REVISIONS_ACTION = ('revisions_index', {
+VIEW_REVISIONS_ACTION = {
+    'instance_specific': True,
     'verbose_name': _('view revisions'),
-    'view_permission_required': 'edit',
+    'description': _("View revisions for {model_name_singular} '{obj}'"),
+    'permission_required': 'edit',
     'view_url_registration_required': False,
-})
+}
 
-DEFAULT_PAGE_MODEL_ACTIONS = [INDEX_ACTION, CREATE_ACTION, INSPECT_ACTION,
-                              EDIT_ACTION, DELETE_ACTION, CHOOSE_PARENT_ACTION,
-                              ADD_SUBPAGE_ACTION, PREVIEW_ACTION, COPY_ACTION,
-                              MOVE_ACTION, VIEW_DRAFT_ACTION, PUBLISH_ACTION,
-                              UNPUBLISH_ACTION, VIEW_REVISIONS_ACTION]
+DEFAULT_PAGE_MODEL_ACTIONS = {
+    'index': INDEX_ACTION,
+    'create': CREATE_ACTION,
+    'inspect': INSPECT_ACTION,
+    'edit': EDIT_ACTION,
+    'delete': DELETE_ACTION,
+    'choose_parent': CHOOSE_PARENT_ACTION,
+    'add_subpage': ADD_SUBPAGE_ACTION,
+    'preview': PREVIEW_ACTION,
+    'copy': COPY_ACTION,
+    'move': MOVE_ACTION,
+    'view_draft': VIEW_DRAFT_ACTION,
+    'view_live': VIEW_LIVE_ACTION,
+    'publish': PUBLISH_ACTION,
+    'unpublish': UNPUBLISH_ACTION,
+    'revisions_index': VIEW_REVISIONS_ACTION,
+}

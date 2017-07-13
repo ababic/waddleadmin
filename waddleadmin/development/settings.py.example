@@ -1,15 +1,24 @@
+"""
+Example settings for local development
+
+Use this file as a base for your local development settings and copy
+it to development.py. It should not be checked into your code repository.
+"""
 import os
 from django.conf.global_settings import *  # NOQA
 
+ROOT_URLCONF = 'waddleadmin.development.urls'
+WAGTAIL_SITE_NAME = 'WaddleAdmin Development'
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+INTERNAL_IPS = ['127.0.0.1']
 DEBUG = True
-SITE_ID = 1
 
-TIME_ZONE = 'Europe/London'
-USE_TZ = True
-USE_I18N = True
-USE_L10N = True
-LANGUAGE_CODE = 'en'
-
+DATABASES = {
+    'default': {
+        'NAME': 'waddleadmin-development.sqlite',
+        'ENGINE': 'django.db.backends.sqlite3',
+    }
+}
 
 INSTALLED_APPS = (
     'wagtail.contrib.settings',
@@ -25,7 +34,6 @@ INSTALLED_APPS = (
     'wagtail.wagtailadmin',
     'wagtail.wagtailcore',
     'wagtail.contrib.modeladmin',
-    'waddleadmin',
 
     'taggit',
     'modelcluster',
@@ -37,21 +45,39 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites'
+
+    # Dev tools
+    'django_extensions',
+    'debug_toolbar',
+
+    # Waddleadmin apps
+    'waddleadmin',
+    'waddleadmin.tests',
+    'waddleadmin.development',
 )
+
+TIME_ZONE = 'Europe/London'
+USE_TZ = True
+USE_I18N = True
+USE_L10N = True
+LANGUAGE_CODE = 'en'
+
+MIDDLEWARE_CLASSES = (
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+) + MIDDLEWARE_CLASSES
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
 STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 MEDIA_URL = '/media/'
-
-SECRET_KEY = 'fake-key'
+SECRET_KEY = 'not-needed'
 LOGIN_URL = 'wagtailadmin_login'
 LOGIN_REDIRECT_URL = 'wagtailadmin_home'
-
 LOCALE_PATHS = (
     os.path.join(PROJECT_ROOT, 'locale'),
 )
+SITE_ID = 1
 
 # =============================================================================
 # Templates

@@ -1,122 +1,22 @@
-from __future__ import absolute_import, unicode_literals
-
+"""
+Settings for test app
+"""
 import os
+from django.conf.global_settings import *  # NOQA
 
-import django
-
+WAGTAIL_SITE_NAME = 'WaddleAdmin Testing'
+ROOT_URLCONF = 'waddleadmin.tests.urls'
 DEBUG = False
-WAGTAIL_ROOT = os.path.dirname(os.path.dirname(__file__))
-STATIC_ROOT = os.path.join(WAGTAIL_ROOT, 'tests', 'test-static')
-MEDIA_ROOT = os.path.join(WAGTAIL_ROOT, 'tests', 'test-media')
-MEDIA_URL = '/media/'
-
-TIME_ZONE = 'Asia/Tokyo'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.environ.get('DATABASE_NAME', 'wagtail'),
-        'USER': os.environ.get('DATABASE_USER', None),
-        'PASSWORD': os.environ.get('DATABASE_PASS', None),
-        'HOST': os.environ.get('DATABASE_HOST', None),
-
-        'TEST': {
-            'NAME': os.environ.get('DATABASE_NAME', None),
-        }
+        'NAME': 'waddleadmin-testing.sqlite',
+        'ENGINE': 'django.db.backends.sqlite3',
     }
 }
 
-# Add extra options when mssql is used (on for example appveyor)
-if DATABASES['default']['ENGINE'] == 'sql_server.pyodbc':
-    DATABASES['default']['OPTIONS'] = {
-        'driver': 'SQL Server Native Client 11.0',
-        'MARS_Connection': 'True',
-    }
-
-
-SECRET_KEY = 'not needed'
-
-ROOT_URLCONF = 'wagtail.tests.urls'
-
-STATIC_URL = '/static/'
-STATIC_ROOT = STATIC_ROOT
-
-STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-)
-
-USE_TZ = True
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.request',
-                'wagtail.tests.context_processors.do_not_use_static_url',
-                'wagtail.contrib.settings.context_processors.settings',
-            ],
-            'debug': True,  # required in order to catch template errors
-        },
-    },
-    {
-        'BACKEND': 'django.template.backends.jinja2.Jinja2',
-        'APP_DIRS': False,
-        'DIRS': [
-            os.path.join(WAGTAIL_ROOT, 'tests', 'testapp', 'jinja2_templates'),
-        ],
-        'OPTIONS': {
-            'extensions': [
-                'wagtail.wagtailcore.jinja2tags.core',
-                'wagtail.wagtailadmin.jinja2tags.userbar',
-                'wagtail.wagtailimages.jinja2tags.images',
-                'wagtail.contrib.settings.jinja2tags.settings',
-            ],
-        },
-    },
-]
-
-if django.VERSION >= (1, 10):
-    MIDDLEWARE = (
-        'django.middleware.common.CommonMiddleware',
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware',
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-        'django.contrib.messages.middleware.MessageMiddleware',
-        'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-        'wagtail.wagtailcore.middleware.SiteMiddleware',
-        'wagtail.wagtailredirects.middleware.RedirectMiddleware',
-    )
-else:
-    MIDDLEWARE_CLASSES = (
-        'django.middleware.common.CommonMiddleware',
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware',
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-        'django.contrib.messages.middleware.MessageMiddleware',
-        'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-        'wagtail.wagtailcore.middleware.SiteMiddleware',
-        'wagtail.wagtailredirects.middleware.RedirectMiddleware',
-    )
-
 INSTALLED_APPS = (
-    'waddleadmin',
-    'waddleadmin.tests',
-    'wagtail.tests.testapp',
-    'wagtail.contrib.wagtailroutablepage',
-    'wagtail.contrib.wagtailfrontendcache',
     'wagtail.contrib.settings',
-    'wagtail.contrib.modeladmin',
     'wagtail.wagtailforms',
     'wagtail.wagtailsearch',
     'wagtail.wagtailembeds',
@@ -125,85 +25,94 @@ INSTALLED_APPS = (
     'wagtail.wagtailusers',
     'wagtail.wagtailsnippets',
     'wagtail.wagtaildocs',
+    'wagtail.wagtailredirects',
     'wagtail.wagtailadmin',
-    'wagtail.api.v2',
     'wagtail.wagtailcore',
-
-    'taggit',
-    'rest_framework',
+    'wagtail.contrib.modeladmin',
+    'wagtail.tests.testapp',
 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.sitemaps',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
+    # Third-party
+    'django_extensions',
+    'taggit',
+    'modelcluster',
+
+    # Waddleadmin apps
+    'waddleadmin',
+    'waddleadmin.tests',
 )
 
+TIME_ZONE = 'Europe/London'
+USE_TZ = True
+USE_I18N = True
+USE_L10N = True
+LANGUAGE_CODE = 'en'
 
-# Using DatabaseCache to make sure that the cache is cleared between tests.
-# This prevents false-positives in some wagtail core tests where we are
-# changing the 'wagtail_root_paths' key which may cause future tests to fail.
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'cache',
-    }
-}
+MIDDLEWARE_CLASSES = (
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+) + MIDDLEWARE_CLASSES
 
-PASSWORD_HASHERS = (
-    'django.contrib.auth.hashers.MD5PasswordHasher',  # don't use the intentionally slow default password hasher
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
+STATIC_URL = '/static/'
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
+MEDIA_URL = '/media/'
+SECRET_KEY = 'not-needed'
+LOGIN_URL = 'wagtailadmin_login'
+LOGIN_REDIRECT_URL = 'wagtailadmin_home'
+LOCALE_PATHS = (
+    os.path.join(PROJECT_ROOT, 'locale'),
+)
+SITE_ID = 1
+
+# =============================================================================
+# Templates
+# =============================================================================
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(PROJECT_ROOT, 'templates'),
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.request',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+                'wagtail.contrib.settings.context_processors.settings',
+            ],
+        },
+    },
+]
+
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'wagtail.wagtailcore.middleware.SiteMiddleware',
+    'wagtail.wagtailredirects.middleware.RedirectMiddleware',
 )
 
-
-WAGTAILSEARCH_BACKENDS = {
-    'default': {
-        'BACKEND': 'wagtail.wagtailsearch.backends.db',
-    }
-}
-
-AUTH_USER_MODEL = 'customuser.CustomUser'
-
-if django.VERSION >= (1, 10) and os.environ.get('DATABASE_ENGINE') in (
-        # Remove next line when Django 1.8 support is dropped.
-        'django.db.backends.postgresql_psycopg2',
-        'django.db.backends.postgresql'):
-    INSTALLED_APPS += ('wagtail.contrib.postgres_search',)
-    WAGTAILSEARCH_BACKENDS['postgresql'] = {
-        'BACKEND': 'wagtail.contrib.postgres_search.backend',
-    }
-
-if 'ELASTICSEARCH_URL' in os.environ:
-    if os.environ.get('ELASTICSEARCH_VERSION') == '5':
-        backend = 'wagtail.wagtailsearch.backends.elasticsearch5'
-    elif os.environ.get('ELASTICSEARCH_VERSION') == '2':
-        backend = 'wagtail.wagtailsearch.backends.elasticsearch2'
-    else:
-        backend = 'wagtail.wagtailsearch.backends.elasticsearch'
-
-    WAGTAILSEARCH_BACKENDS['elasticsearch'] = {
-        'BACKEND': backend,
-        'URLS': [os.environ['ELASTICSEARCH_URL']],
-        'TIMEOUT': 10,
-        'max_retries': 1,
-        'AUTO_UPDATE': False,
-    }
-
-
-WAGTAIL_SITE_NAME = "Test Site"
-
-# Extra user field for custom user edit and create form tests. This setting
-# needs to here because it is used at the module level of wagtailusers.forms
-# when the module gets loaded. The decorator 'override_settings' does not work
-# in this scenario.
-WAGTAIL_USER_CUSTOM_FIELDS = ['country', 'attachment']
-
-WAGTAILADMIN_RICH_TEXT_EDITORS = {
-    'default': {
-        'WIDGET': 'wagtail.wagtailadmin.rich_text.HalloRichTextArea'
-    },
-    'custom': {
-        'WIDGET': 'wagtail.tests.testapp.rich_text.CustomRichTextArea'
-    },
-}
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+)

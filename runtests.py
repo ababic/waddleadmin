@@ -7,7 +7,7 @@ from django.conf import settings
 from django.test.utils import get_runner
 
 if __name__ == "__main__":
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'waddleadmin.settings.testing'
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'waddleadmin.tests.settings'
     django.setup()
     TestRunner = get_runner(settings)
     test_runner = TestRunner()

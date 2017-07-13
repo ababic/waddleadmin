@@ -66,3 +66,4 @@ wagtailmenus.sqlite
 # PyCharm
 .idea/
 
+waddleadmin/development

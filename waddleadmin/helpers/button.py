@@ -90,11 +90,12 @@ class GenericButtonHelper(object):
             return  # The user has insufficient permissions
 
         # Add title to `attrs` so the Button renders it as `title` attribue
-        title = button_kwargs.pop('title', '')
-        try:
-            button_kwargs['attrs']['title'] = title
-        except KeyError:
-            button_kwargs['attrs'] = {'title': title}
+        title = button_kwargs.pop('title', None)
+        if title:
+            try:
+                button_kwargs['attrs']['title'] = title
+            except KeyError:
+                button_kwargs['attrs'] = {'title': title}
 
         # Always make 'classes' a set
         button_kwargs['classes'] = set(button_kwargs.get('classes', []))

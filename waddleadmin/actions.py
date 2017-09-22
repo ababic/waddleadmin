@@ -95,6 +95,8 @@ class ModelAction(object):
 
     def get_button_title(self, obj):
         title = self.button_title or self.description
+        if not title:
+            return ''
         return capfirst(self.format_descriptive_string(title, obj))
 
     def get_button_url(self, obj):
@@ -133,51 +135,61 @@ class ModelAction(object):
             self.get_url_pattern(), self.render_view, self.get_url_name()
         )
 
-# Translators: The default description of an action relating to a specific object e.g. "delete the event 'Christmas day'". Used to populate 'title' attributes on button links
-default_action_description = _("{action_name} the {model_name_singular} '{obj!s}'")
-
 CREATE_ACTION = {
     'instance_specific': False,
+    # Translators: A human-friendly version of the 'create' action codename
     'verbose_name': _('add'),
-    'description': 'Create a new {model_name_singular}',
-    'button_label': _('Add {model_name_singular}'),
+    # Translators: Descriptive 'title' text for 'create' call-to-action links
+    'description': 'create a new {model_name_singular}',
+    # Translators: The visual text for 'create' call-to-action links
+    'button_label': _('add {model_name_singular}'),
     'button_extra_classes': 'bicolor icon icon-plus',
     'permission_required': 'create',
-    'view_class': 'wagtail.contrib.modeladmin.views.CreateView',
 }
 
 INDEX_ACTION = {
     'instance_specific': False,
+    # Translators: A human-friendly version of the 'index' action codename
     'verbose_name': _('list'),
-    'description': _('View a list of existing {model_name_plural}'),
-    'button_label': _('List {model_name_plural}'),
+    # Translators: Descriptive 'title' text for 'index' call-to-action links
+    'description': _('view a list of existing {model_name_plural}'),
+    # Translators: The visual link text for 'index' call-to-action links
+    'button_label': _('list {model_name_plural}'),
     'permission_required': 'list',
-    'view_class': 'waddleadmin.views.IndexView',
 }
 
 INSPECT_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'inspect' action codename
     'verbose_name': _('inspect'),
-    'description': default_action_description,
+    # Translators: Descriptive 'title' text for 'inspect' call-to-action links
+    'description': _("inspect the {model_name_singular} '{obj}'"),
+    # Translators: The visual link text for 'inspect' call-to-action links
+    'button_label': _('inspect'),
     'permission_required': 'inspect',
-    'view_class': 'waddleadmin.views.InspectView',
 }
 
 EDIT_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'edit' action codename
     'verbose_name': _('edit'),
-    'description': default_action_description,
+    # Translators: Descriptive 'title' text for 'inspect' call-to-action links
+    'description': _("edit the {model_name_singular} '{obj}'"),
+    # Translators: Visual link text for 'edit' call-to-action links
+    'button_label': _('edit'),
     'permission_required': 'edit',
-    'view_class': 'waddleadmin.views.EditView',
 }
 
 DELETE_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'delete' action codename
     'verbose_name': _('delete'),
-    'description': default_action_description,
+    # Translators: Descriptive 'title' text for 'inspect' call-to-action links
+    'description': _("delete the {model_name_singular} '{obj}'"),
+    # Translators: Visual link text for 'edit' call-to-action links
+    'button_label': _('edit'),
     'button_extra_classes': 'no',
     'permission_required': 'delete',
-    'view_class': 'waddleadmin.views.DeleteView',
 }
 
 DEFAULT_MODEL_ACTIONS = {
@@ -192,78 +204,114 @@ DEFAULT_MODEL_ACTIONS = {
 
 CHOOSE_PARENT_ACTION = {
     'instance_specific': False,
+    # Translators: A human-friendly version of the 'choose_parent' action codename
     'verbose_name': _('choose parent page'),
-    'description': _('Choose parent page for new {model_name_singular}'),
     'permission_required': 'create',
 }
 
 ADD_SUBPAGE_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'add_subpage' action codename
     'verbose_name': _('add child page'),
-    'description': _("Add child page to '{obj}'"),
+    # Translators: Descriptive 'title' text for 'add_subpage' call-to-action links
+    'description': _("add child page to '{obj}'"),
+    # Translators: Visual link text for 'add_subpage' call-to-action links
+    'button_label': _('add child page'),
     'permission_required': 'edit',
     'view_url_registration_required': False,
 }
 
 COPY_ACTION = {
     'instance_specific': True,
+    #  Translators: A human-friendly version of the 'copy' action codename
     'verbose_name': _('copy'),
-    'description': default_action_description,
+    # Translators: Descriptive 'title' text for 'copy' call-to-action links
+    'description': _("copy {model_name_singular} '{obj}'"),
+    # Translators: Visual link text for 'copy' call-to-action links
+    'button_label': _('copy'),
     'permission_required': 'copy',
     'view_url_registration_required': False,
 }
 
 MOVE_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'move' action codename
     'verbose_name': _('move'),
-    'description': default_action_description,
+    # Translators: Descriptive 'title' text for 'move' call-to-action links
+    'description': _("move {model_name_singular} '{obj}'"),
+    # Translators: Visual link text for 'move' call-to-action links
+    'button_label': _('move'),
     'permission_required': 'move',
     'view_url_registration_required': False,
 }
 
 PREVIEW_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'preview' action codename
     'verbose_name': _('preview'),
-    'description': _("Preview draft version of '{obj}'"),
+    # Translators: Descriptive 'title' text for 'move' call-to-action links
+    'description': _("preview draft version of '{obj}'"),
+    # Translators: Visual link text for 'move' call-to-action links
+    'button_label': _('preview'),
     'permission_required': 'edit',
     'view_url_registration_required': False,
 }
 
 VIEW_LIVE_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'view_live' action codename
     'verbose_name': _('view live'),
-    'description': _("View live version of '{obj}'"),
+    # Translators: Descriptive 'title' text for 'view_live' call-to-action links
+    'description': _("view live version of '{obj}'"),
+    # Translators: Visual link text for 'view_live' call-to-action links
+    'button_label': _('view live'),
     'view_url_registration_required': True,
 }
 
 VIEW_DRAFT_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'view_draft' action codename
     'verbose_name': _('view draft'),
-    'description': _("Preview draft version of '{obj}'"),
+    # Translators: Descriptive 'title' text for 'view_draft' call-to-action links
+    'description': _("preview draft version of '{obj}'"),
+    # Translators: Visual link text for 'view_draft' call-to-action links
+    'button_label': _('view draft'),
     'permission_required': 'edit',
     'view_url_registration_required': False,
 }
 
 PUBLISH_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'publish' action codename
     'verbose_name': _('publish'),
-    'description': default_action_description,
+    # Translators: Descriptive 'title' text for 'publish' call-to-action links
+    'description': _("publish '{obj}'"),
+    # Translators: Visual link text for 'publish' call-to-action links
+    'button_label': _('publish'),
     'permission_required': 'publish',
     'view_url_registration_required': False,
 }
 
 UNPUBLISH_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'unpublish' action codename
     'verbose_name': _('unpublish'),
-    'description': default_action_description,
+    # Translators: Descriptive 'title' text for 'unpublish' call-to-action links
+    'description': _("unpublish '{obj}'"),
+    # Translators: Visual link text for 'publish' call-to-action links
+    'button_label': _('publish'),
     'permission_required': 'unpublish',
     'view_url_registration_required': False,
 }
 
 VIEW_REVISIONS_ACTION = {
     'instance_specific': True,
+    # Translators: A human-friendly version of the 'view_revisions' action codename
     'verbose_name': _('view revisions'),
-    'description': _("View revisions for {model_name_singular} '{obj}'"),
+    # Translators: Descriptive 'title' text for 'view_revisions' call-to-action links
+    'description': _("view revisions for '{obj}'"),
+    # Translators: Visual link text for 'view_revisions' call-to-action links
+    'button_label': _('view revisions'),
     'permission_required': 'edit',
     'view_url_registration_required': False,
 }
